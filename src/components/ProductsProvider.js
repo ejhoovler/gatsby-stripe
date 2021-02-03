@@ -130,20 +130,12 @@ export const skuFragment = graphql`
       localFiles {
         childImageSharp {
           fluid(maxWidth: $maxWidth, quality: $quality) {
-            ...GatsbyImageSharpFluid_withWebp_tracedSVG
+            ...GatsbyImageSharpFluid
           }
         }
       }
     }
-    localFiles {
-      childImageSharp {
-        fluid(maxWidth: $maxWidth, quality: $quality) {
-          ...GatsbyImageSharpFluid_withWebp_tracedSVG
-        }
-      }
-    }
-  }
-`
+  `
 
 const skusQuery = graphql`
   query skusQuery($maxWidth: Int = 500, $quality: Int = 92) {

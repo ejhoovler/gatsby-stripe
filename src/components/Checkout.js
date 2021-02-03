@@ -1,40 +1,34 @@
-import React, { useState } from "react"
-import getStripe from "../utils/stripejs"
+import React, { useContext } from "react"
+import { CartContext } from './CartProvider'
+import { loadStripe } from "@stripe/stripe-js"
 
-const stripePromise = loadStripe(process.env.GATSBY_STRIPE_PUBLISHABLE_KEY)
+const stripePromise = loadStripe(process.env.GATSBY_STRIPE_PUBLISHABLE_KEY);
 
 const Checkout = () => {
-  const [loading, setLoading] = useState(false)
+  const { cart, total } = useContext(CartContext)
 
-  const redirectToCheckout = async event => {
-    event.preventDefault()
-    setLoading(true)
+  const onClick = () => {
+    const lineItems = cart.map(([sku, quantity]) => ({
+      price: sku.id,
+      quantity,
+    }))
 
-    const stripe = await getStripe()
-    const { error } = await stripe.redirectToCheckout({
-      mode: 'payment',
-      lineItems: [{ price: process.env.GATSBY_BUTTON_PRICE_ID, quantity: 1}],
-      successUrl: `${window.location.origin}/page-2/`,
-      cancelUrl: `${window.location.origin}`,
+    fetch("/.netlify/functions/orderCreate", {
+      method: "POST",
+      body: JSON.stringify(lineItems),
     })
-
-    if (error) {
-      console.warn('Error:', error)
-      setLoading(false)
-    }
+    .then(async response => {
+      const { id } = await response.json()
+      localStorage.setItem("cart", "{}")
+      const stripe = await stripePromise
+      const { error } = await stripe.redirectToCheckout({ sessionId: id })
+      alert(error.message)
+    })
+    .catch(err => alert(err.message))
   }
 
-  return (
-    <button 
-      disabled={loading}
-      style={
-        loading ? { ...buttonStyles, ...buttonDisabledStyles } : buttonStyles
-      }
-      onClick={redirectToCheckout}
-      >
-        BUY
-      </button>
-  )
+  return <button onClick={onClick} role="link">Checkout: ${total / 100}</button>
 
-   
-export default Checkout
+}
+
+export default Checkout;
